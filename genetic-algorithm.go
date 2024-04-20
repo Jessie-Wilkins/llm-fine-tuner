@@ -33,7 +33,27 @@ func fit(target string, prompt_index1 []int, prompt_index2 []int, fit_score []in
 			return prompt_index1, prompt_index2, fit_score, true
 		}
 	}
+	mate(prompt_index1, prompt_index2)
 	return new_prompt_index1, new_prompt_index2, fit_score, false
+}
+
+func mate(prompt_index1 []int, prompt_index2 []int) {
+	var offspring = []int{0, 0}
+	if randomCondition() {
+		offspring[0] = prompt_index1[top_fit_score_locations[0]]
+		offspring[1] = prompt_index2[top_fit_score_locations[1]]
+	} else {
+		offspring[0] = prompt_index1[top_fit_score_locations[1]]
+		offspring[1] = prompt_index2[top_fit_score_locations[0]]
+	}
+
+	var replaceable_prompt = 0
+
+	for replaceable_prompt == prompt_index1[top_fit_score_locations[0]] || replaceable_prompt == prompt_index1[top_fit_score_locations[1]] {
+		replaceable_prompt = rand.Intn(5)
+	}
+	prompt_index1[replaceable_prompt] = offspring[0]
+	prompt_index2[replaceable_prompt] = offspring[1]
 }
 
 func mutate(temp_fit_score []int, prompt_i int, fit_score []int, new_prompt_index1 []int, new_prompt_index2 []int, prompt_index2 []int, prompt_index1 []int) {
@@ -41,9 +61,8 @@ func mutate(temp_fit_score []int, prompt_i int, fit_score []int, new_prompt_inde
 		new_prompt_index1[prompt_i] = rand.Intn(len(prompt_array1))
 		new_prompt_index2[prompt_i] = rand.Intn(len(prompt_array2))
 	} else {
-		var bool_array = [2]bool{true, false}
 		fit_score[prompt_i] = temp_fit_score[prompt_i]
-		if bool_array[rand.Intn(2)] {
+		if randomCondition() {
 			new_prompt_index1[prompt_i] = rand.Intn(len(prompt_array1))
 			new_prompt_index2[prompt_i] = prompt_index2[prompt_i]
 		} else {
@@ -67,4 +86,9 @@ func calculateFitness(sep_target []string, i int, s string, temp_fit_score []int
 		top_fit_score_locations[0] = prompt_i
 	}
 
+}
+
+func randomCondition() bool {
+	var bool_array = [2]bool{true, false}
+	return bool_array[rand.Intn(2)]
 }
