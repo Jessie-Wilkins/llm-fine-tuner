@@ -1,11 +1,33 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
+	"os"
 )
 
+type PromptResult struct {
+	Prompt string `json:"prompt"`
+	Result string `json:"result"`
+}
+
 func main() {
+
+	var content, err = os.ReadFile("prompt-result.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var prompt_result_obj PromptResult
+
+	err = json.Unmarshal(content, &prompt_result_obj)
+
+	if err != nil {
+		fmt.Println("JSON decode error!")
+		return
+	}
 
 	var fit_score = []int{0, 0, 0, 0, 0}
 
@@ -18,7 +40,7 @@ func main() {
 	var num_of_rounds = 0
 
 	for !fit_achieved {
-		prompt_index1, prompt_index2, fit_score, fit_achieved = fit("real apple", prompt_index1, prompt_index2, fit_score)
+		prompt_index1, prompt_index2, fit_score, fit_achieved = fit(prompt_result_obj.Result, prompt_index1, prompt_index2, fit_score)
 		num_of_rounds++
 		// for i := 0; i < 5; i++ {
 
