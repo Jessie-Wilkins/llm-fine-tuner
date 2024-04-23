@@ -29,6 +29,10 @@ func main() {
 		return
 	}
 
+	var resp = promptLLm()
+
+	fmt.Println(resp)
+
 	var fit_score = []int{0, 0, 0, 0, 0}
 
 	var prompt_index1 = []int{rand.Intn(5), rand.Intn(5), rand.Intn(5), rand.Intn(5), rand.Intn(5)}
