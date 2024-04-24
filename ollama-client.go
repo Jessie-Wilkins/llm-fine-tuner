@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"time"
 
@@ -21,15 +22,17 @@ type LlmResponse struct {
 	EvalDuration       int64     `json:"eval_duration"`
 }
 
-func promptLLm() *resty.Response {
+func promptLLm(prompt string) LlmResponse {
+
+	var llmResponse LlmResponse
+
 	client := resty.New()
 
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(`{
 			"model": "tinydolphin",
-			"prompt": "What color is the sky at different times of the day? Respond using JSON",
-			"format": "json",
+			"prompt": "` + prompt + `",
 			"stream": false
 		  }`).
 		SetResult(&LlmResponse{}).
@@ -39,5 +42,7 @@ func promptLLm() *resty.Response {
 		log.Fatal(err)
 	}
 
-	return resp
+	json.Unmarshal(resp.Body(), &llmResponse)
+
+	return llmResponse
 }

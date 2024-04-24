@@ -1,4 +1,4 @@
 {
-    "prompt": "Gimme a real apple.",
-    "result": "real apple"
+    "prompt": "What color is the sky? Respond with one lower-case word. Please do not add punctuation.",
+    "result": "blue"
 }

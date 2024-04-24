@@ -1,50 +1,89 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 )
 
-var prompt_array1 = []string{"fake", "real", "possible", "improbable", "fantastical"}
-
-var prompt_array2 = []string{"banana", "apple", "eggplant", "cranberry", "orange"}
+var prompt_array1 = []string{
+	"Answer the question using the context below.",
+	"Let’s think step by step.",
+	"Take a deep breath and work through the problem step by step.",
+	"Follow my instructions exactly.",
+	"Think very carefully.",
+	"You are a helpful assistant.",
+	`Imagine three different experts are answering this question.
+	All experts will write down 1 step of their thinking,
+	then share it with the group.
+	Then all experts will go on to the next step, etc.
+	If any expert realises they're wrong at any point then they leave.`,
+	"Explain to me like I’m 11 years old.",
+	"Explain to me as if I’m a beginner",
+	"Write this using simple English like you are explaining it to a 5-year-old.",
+	"I will tip you $500 for a better solution.",
+	"You MUST do this.",
+	"Do this correctly or else.",
+	"You are an expert in this.",
+	"Include all the necessary details.",
+	"Don't mess up.",
+	"This is your task.",
+}
 
 var top_fit_score_values = []int{0, 0}
 var top_fit_score_locations = []int{0, 0}
 
-func fit(target string, prompt_index1 []int, prompt_index2 []int, fit_score []int) ([]int, []int, []int, bool) {
+func fit(target string, prompt string, prompt_index1 []int, prompt_index2 []bool, fit_score []int) ([]int, []bool, []int, bool, int) {
 	var new_prompt_index1 = []int{0, 0, 0, 0, 0}
-	var new_prompt_index2 = []int{0, 0, 0, 0, 0}
+	var is_before_prompt_index = []bool{false, false, false, false, false}
 	var temp_fit_score = []int{0, 0, 0, 0, 0}
 	for prompt_i, _ := range prompt_index1 {
 
-		var actual = prompt_array1[prompt_index1[prompt_i]] + " " + prompt_array2[prompt_index2[prompt_i]]
+		full_prompt := createFullPrompt(prompt_index2, prompt_i, prompt_index1, prompt)
 
-		if actual != target {
+		var resp = promptLLm(full_prompt)
+
+		fmt.Printf("Response for prompt %v: %v\n\n", prompt_i, resp.Response)
+
+		fmt.Printf("Prompt %v is: %v\n\n", prompt_i, full_prompt)
+
+		if resp.Response != target {
 			var sep_target = strings.Split(target, " ")
-			var sep_actual = strings.Split(actual, " ")
+			var sep_actual = strings.Split(resp.Response, " ")
 
 			for i, s := range sep_actual {
 				calculateFitness(sep_target, i, s, temp_fit_score, prompt_i)
-				mutate(temp_fit_score, prompt_i, fit_score, new_prompt_index1, new_prompt_index2, prompt_index2, prompt_index1)
+				mutate(temp_fit_score, prompt_i, fit_score, new_prompt_index1, is_before_prompt_index, prompt_index1, prompt_index2)
 			}
 
 		} else {
-			return prompt_index1, prompt_index2, fit_score, true
+			return prompt_index1, prompt_index2, fit_score, true, prompt_i
 		}
 	}
 	mate(prompt_index1, prompt_index2)
-	return new_prompt_index1, new_prompt_index2, fit_score, false
+	return new_prompt_index1, is_before_prompt_index, fit_score, false, -1
 }
 
-func mate(prompt_index1 []int, prompt_index2 []int) {
-	var offspring = []int{0, 0}
-	if randomCondition() {
-		offspring[0] = prompt_index1[top_fit_score_locations[0]]
-		offspring[1] = prompt_index2[top_fit_score_locations[1]]
+func createFullPrompt(prompt_index2 []bool, prompt_i int, prompt_index1 []int, prompt string) string {
+	var full_prompt string
+
+	if prompt_index2[prompt_i] {
+		full_prompt = prompt_array1[prompt_index1[prompt_i]] + " " + prompt
 	} else {
-		offspring[0] = prompt_index1[top_fit_score_locations[1]]
-		offspring[1] = prompt_index2[top_fit_score_locations[0]]
+		full_prompt = prompt + " " + prompt_array1[prompt_index1[prompt_i]]
+	}
+	return full_prompt
+}
+
+func mate(prompt_index1 []int, prompt_index2 []bool) {
+	var offspring_index = 0
+	var offspring_before = false
+	if randomCondition() {
+		offspring_index = prompt_index1[top_fit_score_locations[0]]
+		offspring_before = prompt_index2[top_fit_score_locations[1]]
+	} else {
+		offspring_index = prompt_index1[top_fit_score_locations[1]]
+		offspring_before = prompt_index2[top_fit_score_locations[0]]
 	}
 
 	var replaceable_prompt = 0
@@ -52,14 +91,14 @@ func mate(prompt_index1 []int, prompt_index2 []int) {
 	for replaceable_prompt == prompt_index1[top_fit_score_locations[0]] || replaceable_prompt == prompt_index1[top_fit_score_locations[1]] {
 		replaceable_prompt = rand.Intn(5)
 	}
-	prompt_index1[replaceable_prompt] = offspring[0]
-	prompt_index2[replaceable_prompt] = offspring[1]
+	prompt_index1[replaceable_prompt] = offspring_index
+	prompt_index2[replaceable_prompt] = offspring_before
 }
 
-func mutate(temp_fit_score []int, prompt_i int, fit_score []int, new_prompt_index1 []int, new_prompt_index2 []int, prompt_index2 []int, prompt_index1 []int) {
+func mutate(temp_fit_score []int, prompt_i int, fit_score []int, new_prompt_index1 []int, new_prompt_index2 []bool, prompt_index1 []int, prompt_index2 []bool) {
 	if temp_fit_score[prompt_i] < fit_score[prompt_i] {
 		new_prompt_index1[prompt_i] = rand.Intn(len(prompt_array1))
-		new_prompt_index2[prompt_i] = rand.Intn(len(prompt_array2))
+		new_prompt_index2[prompt_i] = randomCondition()
 	} else {
 		fit_score[prompt_i] = temp_fit_score[prompt_i]
 		if randomCondition() {
@@ -67,13 +106,13 @@ func mutate(temp_fit_score []int, prompt_i int, fit_score []int, new_prompt_inde
 			new_prompt_index2[prompt_i] = prompt_index2[prompt_i]
 		} else {
 			new_prompt_index1[prompt_i] = prompt_index1[prompt_i]
-			new_prompt_index2[prompt_i] = rand.Intn(len(prompt_array2))
+			new_prompt_index2[prompt_i] = randomCondition()
 		}
 	}
 }
 
 func calculateFitness(sep_target []string, i int, s string, temp_fit_score []int, prompt_i int) {
-	if sep_target[i] == s {
+	if i < len(sep_target) && sep_target[i] == s {
 		temp_fit_score[prompt_i]++
 	}
 	if temp_fit_score[prompt_i] > top_fit_score_values[0] {
