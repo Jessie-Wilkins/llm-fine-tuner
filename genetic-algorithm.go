@@ -47,7 +47,7 @@ func fit(target string, prompt string, prompt_index1 []int, prompt_index2 []bool
 
 		fmt.Printf("Prompt %v is: %v\n\n", prompt_i, full_prompt)
 
-		if resp.Response != target {
+		if strings.TrimPrefix(resp.Response, " ") != target {
 			var sep_target = strings.Split(target, " ")
 			var sep_actual = strings.Split(resp.Response, " ")
 
@@ -115,6 +115,36 @@ func calculateFitness(sep_target []string, i int, s string, temp_fit_score []int
 	if i < len(sep_target) && sep_target[i] == s {
 		temp_fit_score[prompt_i]++
 	}
+
+	var joined_string = strings.Join(sep_target, " ")
+
+	if strings.Contains(joined_string, s) {
+		temp_fit_score[prompt_i]++
+	}
+	if strings.Contains(strings.ToLower(joined_string), strings.ToLower(s)) {
+		temp_fit_score[prompt_i]++
+	}
+	if strings.Contains(strings.TrimSpace(strings.ToLower(joined_string)), strings.TrimSpace(strings.ToLower(s))) {
+		temp_fit_score[prompt_i]++
+	}
+	replacements := map[string]string{
+		".": "",
+		",": "",
+		"'": "",
+		"?": "",
+		"!": "",
+		"`": "",
+	}
+	var noPuncJoinString string
+	var noPuncS string
+	for old, new := range replacements {
+		noPuncJoinString = strings.ReplaceAll(joined_string, old, new)
+		noPuncS = strings.ReplaceAll(s, old, new)
+	}
+	if strings.Contains(noPuncJoinString, noPuncS) {
+		temp_fit_score[prompt_i]++
+	}
+
 	if temp_fit_score[prompt_i] > top_fit_score_values[0] {
 		top_fit_score_values[1] = top_fit_score_values[0]
 		top_fit_score_locations[1] = top_fit_score_locations[0]
