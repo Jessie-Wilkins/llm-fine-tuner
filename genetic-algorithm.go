@@ -41,17 +41,44 @@ func fit(target string, prompt string, prompt_index1 []int, prompt_index2 []bool
 
 		full_prompt := createFullPrompt(prompt_index2, prompt_i, prompt_index1, prompt)
 
-		var resp = promptLLm(full_prompt)
+		var resp1 = promptLLm(full_prompt)
 
-		fmt.Printf("Response for prompt %v: %v\n\n", prompt_i, resp.Response)
+		var resp2 = promptLLm(full_prompt)
+
+		var resp3 = promptLLm(full_prompt)
+
+		fmt.Printf("Response for prompt1 %v: %v\n\n", prompt_i, resp1.Response)
+		fmt.Printf("Response for prompt2 %v: %v\n\n", prompt_i, resp2.Response)
+		fmt.Printf("Response for prompt3 %v: %v\n\n", prompt_i, resp3.Response)
 
 		fmt.Printf("Prompt %v is: %v\n\n", prompt_i, full_prompt)
 
-		if strings.TrimPrefix(resp.Response, " ") != target {
+		if (strings.TrimPrefix(resp1.Response, " ") == target &&
+			strings.TrimPrefix(resp2.Response, " ") != target &&
+			strings.TrimPrefix(resp3.Response, " ") != target) ||
+			(strings.TrimPrefix(resp1.Response, " ") != target &&
+				strings.TrimPrefix(resp2.Response, " ") == target &&
+				strings.TrimPrefix(resp3.Response, " ") != target) ||
+			(strings.TrimPrefix(resp1.Response, " ") != target &&
+				strings.TrimPrefix(resp2.Response, " ") != target &&
+				strings.TrimPrefix(resp3.Response, " ") == target) ||
+			(strings.TrimPrefix(resp1.Response, " ") != target &&
+				strings.TrimPrefix(resp2.Response, " ") != target &&
+				strings.TrimPrefix(resp3.Response, " ") != target) {
 			var sep_target = strings.Split(target, " ")
-			var sep_actual = strings.Split(resp.Response, " ")
+			var sep_actual1 = strings.Split(resp1.Response, " ")
+			var sep_actual2 = strings.Split(resp2.Response, " ")
+			var sep_actual3 = strings.Split(resp3.Response, " ")
 
-			for i, s := range sep_actual {
+			for i, s := range sep_actual1 {
+				calculateFitness(sep_target, i, s, temp_fit_score, prompt_i)
+				mutate(temp_fit_score, prompt_i, fit_score, new_prompt_index1, is_before_prompt_index, prompt_index1, prompt_index2)
+			}
+			for i, s := range sep_actual2 {
+				calculateFitness(sep_target, i, s, temp_fit_score, prompt_i)
+				mutate(temp_fit_score, prompt_i, fit_score, new_prompt_index1, is_before_prompt_index, prompt_index1, prompt_index2)
+			}
+			for i, s := range sep_actual3 {
 				calculateFitness(sep_target, i, s, temp_fit_score, prompt_i)
 				mutate(temp_fit_score, prompt_i, fit_score, new_prompt_index1, is_before_prompt_index, prompt_index1, prompt_index2)
 			}
