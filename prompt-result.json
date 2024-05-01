@@ -1,4 +1,4 @@
 {
-    "prompt": "What color is the sky? Respond with one lower-case word. Please do not add punctuation and do not add space.",
-    "result": "blue"
+    "prompt": "Who was the US President in 2018? Answer with only the name and give me no other commentary.",
+    "result": "Donald Trump"
 }
